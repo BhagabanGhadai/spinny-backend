@@ -1,0 +1,9 @@
+{
+    "PORT":8000,
+    "mongo_db":"mongodb://127.0.0.1:27017/spiny_clone",
+    "access_exp_time":864,
+    "refresh_exp_time":172800,
+    "access_secretkey":"oknefv9hu9efoiernoi[jv0enfn[0fh=0oniesfbvh3r4hh9r3292bio",
+    "refresh_secretkey":"oidnh9chf439fbp3rh0n43fb4[f03bfb9cbrb90eh3032ifh0nbobf9b3df0",
+    "saltround":10
+}
