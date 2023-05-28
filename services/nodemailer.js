@@ -19,8 +19,8 @@ exports.SEND_EMAIL=async (email,otp)=>{
                 
                        The OTP for SingUp with Spinny
                        Use your secret code!
-        
                        ${otp}
+                       
                        copy the code and paste for complete the signup options
                        If you did not forget your password, you can ignore this email.
         
@@ -30,7 +30,7 @@ exports.SEND_EMAIL=async (email,otp)=>{
         if (error) {
             console.log(error);
         } else {
-            console.log('Email sent: ' + info.response);
+            console.log('Email sent successful: ');
         }
     });
     
@@ -81,7 +81,7 @@ exports.SEND_EMAIL_ON_LOGIN=async (email,otp)=>{
     const mailOptions = {
         from: env.EMAIL,
         to: email,
-        subject: 'Recieved Your Loan Application request',
+        subject: 'OTP for your login at spinny',
         text: `
         Hello Sir/Madam
                 

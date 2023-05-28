@@ -37,9 +37,6 @@ exports.IS_AUTHENTICATED = (req, res, next)=>{
     }
 
     req.payload = payload
-    if(payload.is_active!=true){
-        return _throw401(res,'User not active.')
-    }
     req.headers.user = payload.user;
     req.headers.role = payload.role;
     next()

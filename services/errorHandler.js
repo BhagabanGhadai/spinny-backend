@@ -11,6 +11,9 @@ exports._throw401 = (response,errorMessage)=>{
 exports._throw404 = (response,errorMessage)=>{
     return response.status(404).send({detail:errorMessage})
 }
+exports._throw422 = (response,errorMessage,error)=>{
+    return response.status(422).send({detail:errorMessage,error:error.message})
+}
 exports._throw500 = (response,error)=>{
     console.log('--------------------- INTERNAL SERVER ERROR !! --------------------');
     console.log(error);

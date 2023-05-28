@@ -5,6 +5,7 @@ const { DB_CONNECTION } = require('./services/db.connection');
 var cors = require('cors')
 const morgan = require('morgan')
 const multer = require('multer')
+const {BLACKLIST_CHECK} = require('./services/blaklisted.token')
 const app = express();
 DB_CONNECTION()
 
@@ -13,11 +14,12 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(morgan('dev'))
 app.use(multer().any())
-app.use('/', AppRoutes)
+app.use(BLACKLIST_CHECK)
+app.use('/api', AppRoutes)
 
 app.listen(env.PORT, () => {
     console.log('user service running on port ', env.PORT);
-}).on('error',(err)=>{
+}).on('error', (err) => {
     console.log(err)
     process.exit()
 })

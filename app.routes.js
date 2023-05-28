@@ -1,5 +1,6 @@
 const router = require('express').Router()
 
+const {User_Router}=require('./API/user/user.routes')
 
 router.get('/test',(req, res) => {
     console.log(req)
@@ -7,5 +8,5 @@ router.get('/test',(req, res) => {
         "message": "success"
     })
 })
-
+router.use('/user',User_Router)
 module.exports.AppRoutes = router

@@ -1,19 +1,25 @@
 const { env } = require('../../../env')
-const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const { _throw500, _throw400Err, _throw400, _throw404 } = require('../../../services/errorHandler')
+const { _throw500, _throw400Err, _throw400, _throw404,_throw422 } = require('../../../services/errorHandler')
 const userModel = require('../models/user.model')
+const blackListModel=require('../models/blacklisttoken.model')
 const { RANDOM_OTP } = require('../../../services/otp')
 const { SEND_EMAIL,SEND_EMAIL_ON_LOGIN } = require('../../../services/nodemailer')
-let invalidate = new Set()
+const {UserValidations} = require('../../../services/validation')
+let isvalid=new UserValidations()
 
 exports.USER_SIGNUP = async (req, res) => {
+    let schema=isvalid.signup_validations()
+    const { error, value } =schema.validate(req.body)
+    if(error){
+        return _throw422(res,'invalid request',error)
+    }
     try {
-        let check_email_existance = await User.findOne({ 'email': req.body.email, is_verified: true })
+        let check_email_existance = await userModel.findOne({ 'email': req.body.email, is_verified: true })
         if (check_email_existance) {
             return _throw400(res, 'Email Alreday Exists')
         }
-        let check_mobile_existance = await User.findOne({ 'mobile': req.body.mobile, is_verified: true })
+        let check_mobile_existance = await userModel.findOne({ 'mobile': req.body.mobile, is_verified: true })
         if (check_mobile_existance) {
             return _throw400(res, 'Mobile Number Alreday Exists')
         }
@@ -22,7 +28,7 @@ exports.USER_SIGNUP = async (req, res) => {
         return _throw500(res, err)
     }
 
-    let new_user = new User(req.body)
+    let new_user = new userModel(req.body)
     new_user.validate().then((_noerr) => {
 
         new_user.save().then(async (saved_user) => {
@@ -42,7 +48,7 @@ exports.VERIFY_OTP_ON_SIGNUP = async (req, res) => {
     }
     let user_details = null
     try {
-        user_details = await User.findOne({ "_id": req.query.user_id, is_verified: false }).exec()
+        user_details = await userModel.findOne({ "_id": req.query.user_id, is_verified: false }).exec()
     } catch (error) {
         return _throw400(res, error)
     }
@@ -52,18 +58,20 @@ exports.VERIFY_OTP_ON_SIGNUP = async (req, res) => {
     if (user_details.otp != req.body.otp) {
         return _throw400(res, 'invalid otp')
     }
-    await User.findOneAndUpdate({ "_id": req.query.user_id }, { "$set": { is_verified: true } }, { new: true })
+    await userModel.findOneAndUpdate({ "_id": req.query.user_id }, { "$set": { is_verified: true } }, { new: true })
         
     return res.status(200).json({ message: 'user verify successful' })
 }
 
 exports.VERIFY_OTP_ON_LOGIN = async (req, res) => {
-    if (!req.query.user_id) {
-        return _throw400(res, "User ID is required!")
+    let schema=isvalid.login_verification_validations()
+    const { error, value } =schema.validate(req.body)
+    if(error){
+        return _throw422(res,'invalid request',error)
     }
     let user_details = null
     try {
-        user_details = await User.findOne({ "_id": req.query.user_id, is_verified: true }).exec()
+        user_details = await userModel.findOne({ "email": req.body.email, is_verified: true }).exec()
     } catch (error) {
         return _throw400(res, error)
     }
@@ -79,7 +87,7 @@ exports.VERIFY_OTP_ON_LOGIN = async (req, res) => {
     let payload = {
         email: user_details.email,
         role: user_details.role,
-        is_active: user_details.is_active,
+        is_verified: user_details.is_verified,
         iat: Date.now()/1000
     }
     refresh_token = jwt.sign(payload, env.refresh_secretkey, { expiresIn: env.refresh_exp_time })
@@ -87,11 +95,7 @@ exports.VERIFY_OTP_ON_LOGIN = async (req, res) => {
 
     return res.status(200).json({
         "access Token": access_token,
-        "refresh Token": refresh_token,
-        "user": {
-            Name: name,
-            email: email,
-        },
+        "refresh Token": refresh_token
     })
 }
 
@@ -101,15 +105,15 @@ exports.RESEND_OTP = async (req, res) => {
     }
     let user_details = null
     try {
-        user_details = await User.findOne({ "_id": req.query.user_id,is_verified: false }).exec()
+        user_details = await userModel.findOne({ "_id": req.query.user_id }).exec()
     } catch (error) {
         return _throw400(res, error)
     }
-    if (!user_details) {
-        return _throw400(res, 'user not found')
+    if (user_details.is_verified===true) {
+        return res.status(200).send('user alreday verified')
     }
     let otp = RANDOM_OTP()
-    User.findOneAndUpdate({ "_id": req.query.user_id }, { "$set": { otp: otp } }, { new: true }).then(async (otp_created) => {
+    userModel.findOneAndUpdate({ "_id": req.query.user_id }, { "$set": { otp: otp } }, { new: true }).then(async (otp_created) => {
         if (otp_created) {
             SEND_EMAIL(user_details.email, otp).then(() => {
                 return res.status(200).json({ message: 'otp resend succesfull' })
@@ -125,9 +129,14 @@ exports.RESEND_OTP = async (req, res) => {
 }
 
 exports.GET_SPECIFIC_USER_DETAILS = async (req, res) => {
+    let schema=isvalid.specific_user_data_validations()
+    const { error, value } =schema.validate(req.query)
+    if(error){
+        return _throw422(res,'invalid request',error)
+    }
     let user_details = null
     try {
-        user_details = await User.findOne({ "_id": req.params.user_id, "is_verified": true}).exec()
+        user_details = await userModel.findOne({ "_id": req.query.user_id, "is_verified": true}).exec()
     } catch (error) {
         return _throw400(res, error)
     }
@@ -138,7 +147,7 @@ exports.GET_USER_LIST_ADMIN = async (req, res) => {
 
     let user_list = null
     try {
-        user_list = await User.aggregate([
+        user_list = await userModel.aggregate([
             {
                 $match: {
                     "is_verified": true
@@ -152,31 +161,37 @@ exports.GET_USER_LIST_ADMIN = async (req, res) => {
 }
 
 exports.USER_LOGOUT = async (req, res) => {
-    invalidate.add(req.body.refreshToken)
+    let schema=isvalid.token_validation()
+    let {err,data}=schema.validate(req.body)
+    if(err){
+        return _throw422(res,'invalid request',err)
+    }
+    await blackListModel.create({token:req.body.token})
     return res.status(200).json({ message: 'logout sucessful' })
 }
-
+/**can update only the name */
 exports.UPDATE_USER = async (req, res) => {
-    if (!req.params.user_id) {
-        return _throw400(res, 'user id is required')
+    if(!req.query.user_id){
+        return _throw400(res,'user id not found')
+    }
+    let schema=isvalid.update_user_validations()
+    const { error, value } =schema.validate(req.body)
+    if(error){
+        return _throw422(res,'invalid request',error)
     }
     let user_details = null
     try {
-        user_details = await User.findOne({ "_id": req.params.user_id, "is_verified": true}).exec()
+        user_details = await userModel.findOne({ "_id": req.query.user_id, "is_verified": true}).exec()
     } catch (error) {
         return _throw400(res, error)
     }
     if (!user_details) {
         return _throw404(res, 'user not found')
     }
-    if (req.body.password) {
-        let hashed_password = await bcrypt.hash(req.body.password, env.saltround)
-        req.body.password = hashed_password
-    }
     if (req.body.email) {
         let check_email_existance = null
         try {
-            check_email_existance = await User.findOne({ 'email': req.body.email, is_verified: true, "is_blocked": false }).exec()
+            check_email_existance = await userModel.findOne({ 'email': req.body.email, is_verified: true, "is_blocked": false }).exec()
         } catch (error) {
             return _throw400(res, error)
         }
@@ -187,7 +202,7 @@ exports.UPDATE_USER = async (req, res) => {
     if (req.body.mobile) {
         let check_mobile_existance = null
         try {
-            check_mobile_existance = await User.findOne({ 'mobile': req.body.mobile, is_verified: true }).exec()
+            check_mobile_existance = await userModel.findOne({ 'mobile': req.body.mobile, is_verified: true }).exec()
         } catch (error) {
             return _throw400(res, error)
         }
@@ -198,7 +213,7 @@ exports.UPDATE_USER = async (req, res) => {
 
     let update_user = null
     try {
-        update_user = await User.findOneAndUpdate({ "_id": req.params.user_id },
+        update_user = await userModel.findOneAndUpdate({ "_id": req.query.user_id },
             req.body,
             { new: true }).exec()
     } catch (err) {
@@ -211,44 +226,17 @@ exports.UPDATE_USER = async (req, res) => {
     return res.status(200).json({ message: 'update successful', data: update_user })
 }
 
-exports.FORGET_PASSWORD = async (req, res) => {
-
-    let user_details = null
-    try {
-        user_details = await User.findOne({ "is_verified": true, "email": req.body.email }).exec()
-    } catch (error) {
-        return _throw400(res, error)
+exports.GENERATE_ACCESS_TOKEN = async (req, res) => {
+    let schema=isvalid.token_validation()
+    let {err,data}=schema.validate(req.body)
+    if(err){
+        return _throw422(res,'invalid request',err)
     }
-    if (!user_details) {
-        return _throw404(res, 'user not found')
-    }
-
-    let otp = RANDOM_OTP()
-    User.findOneAndUpdate({ "_id": req.query.user_id }, { "$set": { otp: otp } }, { new: true }).then(async (otp_created) => {
-        if (otp_created) {
-            SEND_EMAIL(user_details.email, otp).then(() => {
-                return res.status(200).json({ message: 'otp resend succesfull' })
-            }).catch((err) => {
-                return _throw400Err(res, err)
-            })
-        }}).catch((err) => {
-            return _throw400Err(res, err)
-        })
-}
-
-exports.GENERATE_ACCESS_TOKEN = (req, res) => {
-    const refresh_token = req.body.refreshToken;
-    if (!refresh_token) {
-        return _throw400(res, "Refresh token not found, login again");
-    }
-    if (invalidate.has(refresh_token)) {
-        return _throw400(res, "unauthorized");
-    }
-    jwt.verify(refresh_token, env.refresh_secretkey, (err, user) => {
+    jwt.verify(req.body.token, env.refresh_secretkey, (err, user) => {
         if (user) {
             let payload = {
                 email: user.email,
-                is_active: user.isActive,
+                is_verified: user.is_verified,
                 iat: Date.now()
             }
             const access_token = jwt.sign(payload, env.access_secretkey, { expiresIn: env.access_exp_time });
@@ -263,11 +251,14 @@ exports.GENERATE_ACCESS_TOKEN = (req, res) => {
 };
 
 exports.USER_LOGIN = async (req, res) => {
-
-
+    let schema=isvalid.login_validations()
+    const { error, value } =schema.validate(req.body)
+    if(error){
+        return _throw422(res,'invalid request',error)
+    }
     let user_details = null
     try {
-        user_details = await userModel.findOne({ 'mobile': req.body.mobile ,isActive:true}).exec()
+        user_details = await userModel.findOne({ 'email': req.body.email ,is_verified:true}).exec()
     } catch (error) {
         return _throw400(res, error)
     }
@@ -275,10 +266,8 @@ exports.USER_LOGIN = async (req, res) => {
         return _throw404(res, 'user not found')
     }
     let otp=RANDOM_OTP()
-    SEND_EMAIL_ON_LOGIN(user_details.email,otp).then(async(data)=>{
-        if(data){
+    SEND_EMAIL_ON_LOGIN(user_details.email,otp).then(async()=>{
          await userModel.findOneAndUpdate({_id:user_details._id},{$set:{otp:otp}},{new:true})
-        }
         return res.status(200).send('otp send successful')
     }).catch((err)=>{
         return _throw400Err(res,err)
