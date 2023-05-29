@@ -13,13 +13,13 @@ const schema = new mongoose.Schema({
         required: true
     },
     'dob':{
-        type:Date
+        type:String
     },
     'gender': {
         type: String,
         validate:{
             validator: (v)=>{
-                if(!(v=='male' || v=='female')){
+                if(!(v=='male' || v=='female' || v=='other')){
                     return false
                 }
                 return true

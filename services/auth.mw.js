@@ -37,7 +37,8 @@ exports.IS_AUTHENTICATED = (req, res, next)=>{
     }
 
     req.payload = payload
-    req.headers.user = payload.user;
+    req.headers.email = payload.email;
+    req.headers.user=payload.user
     req.headers.role = payload.role;
     next()
 }

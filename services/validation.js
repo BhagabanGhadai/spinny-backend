@@ -42,4 +42,34 @@ class UserValidations{
     }
 }
 
-module.exports={UserValidations}
+class LoanValidations{
+    loan_request_validation(){
+        return Joi.object({
+            user_id:Joi.string().alphanum().required(),
+            pancard:Joi.string().alphanum().required(),
+            name: Joi.string().min(3).max(50).required(),
+            dob:Joi.string().required(),
+            gender:Joi.string().valid('male', 'female','other').required(),
+            mobile: Joi.string().pattern(new RegExp(/^\d{10}$/)).required(),
+            email: Joi.string().email().empty('').required(),
+            'employement-type':Joi.string().valid("home maker","self employed","salaried").required(),
+            address1:Joi.string().required(),
+            address2:Joi.string().required(),
+            pincode:Joi.number().min(6).required(),
+            city:Joi.string().required(),
+            state:Joi.string().required()
+        })
+    }
+    specific_loan_details_validation(){
+        return Joi.object({
+            loan_id:Joi.string().alphanum().required()
+        })
+    }
+    user_id_validation(){
+        return Joi.object({
+            user_id:Joi.string().alphanum().required()
+        })
+    }
+}
+
+module.exports={UserValidations,LoanValidations}

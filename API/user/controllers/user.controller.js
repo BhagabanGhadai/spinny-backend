@@ -86,6 +86,7 @@ exports.VERIFY_OTP_ON_LOGIN = async (req, res) => {
     let refresh_token = null
     let payload = {
         email: user_details.email,
+        user:user_details._id,
         role: user_details.role,
         is_verified: user_details.is_verified,
         iat: Date.now()/1000

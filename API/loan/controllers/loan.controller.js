@@ -1,8 +1,15 @@
-const { _throw500, _throw400Err, _throw400, _throw404 } = require('../../../services/errorHandler')
+const { _throw500, _throw400Err, _throw400, _throw404 ,_throw422} = require('../../../services/errorHandler')
 const loanModel = require('../models/loan.model')
 const { SEND_EMAIL_ON_LOAN } = require('../../../services/nodemailer')
+const {LoanValidations} = require('../../../services/validation')
+const isvalid=new LoanValidations()
 
 exports.ADD_LOAN_REQUEST = async (req, res) => {
+    let schema=isvalid.loan_request_validation()
+    const { error, value } =schema.validate(req.body)
+    if(error){
+        return _throw422(res,'invalid request',error)
+    }
     let new_loan = new loanModel(req.body)
     new_loan.validate().then((_noerr) => {
 
@@ -18,8 +25,10 @@ exports.ADD_LOAN_REQUEST = async (req, res) => {
 }
 
 exports.GET_LOAN_REQUEST_DEATILS = async (req, res) => {
-    if (!req.query.loan_id) {
-        return _throw400(res, 'loan id required')
+    let schema=isvalid.specific_loan_details_validation()
+    const { error, value } =schema.validate(req.query)
+    if(error){
+        return _throw422(res,'invalid request',error)
     }
     let loan_deatils = null;
     try {
@@ -46,8 +55,10 @@ exports.GET_LOAN_REQUEST_LIST = async (req, res) => {
 }
 
 exports.GET_LOAN_BY_USER=async (req,res)=>{
-    if(!req.query.user_id){
-        return _throw400(res,'user id is required')
+    let schema=isvalid.user_id_validation()
+    const { error, value } =schema.validate(req.query)
+    if(error){
+        return _throw422(res,'invalid request',error)
     }
     try {
         let all_loan_list = await loanModel.find({user_id:req.query.user_id})
@@ -61,8 +72,10 @@ exports.GET_LOAN_BY_USER=async (req,res)=>{
 }
 
 exports.UPDATE_LOAN_REQUEST = async (req, res) => {
-    if (!req.query.loan_id) {
-        return _throw400(res, 'loan id required')
+    let schema=isvalid.specific_loan_details_validation()
+    const { error, value } =schema.validate(req.query)
+    if(error){
+        return _throw422(res,'invalid request',error)
     }
     try {
         let loan_deatils = await loanModel.findById(req.query.loan_id)
@@ -85,8 +98,10 @@ exports.UPDATE_LOAN_REQUEST = async (req, res) => {
 }
 
 exports.DELETE_LOAN_REQUEST = async (req, res) => {
-    if (!req.query.loan_id) {
-        return _throw400(res, 'loan id required')
+    let schema=isvalid.specific_loan_details_validation()
+    const { error, value } =schema.validate(req.query)
+    if(error){
+        return _throw422(res,'invalid request',error)
     }
     try {
         let loan_deatils = await loanModel.findById(req.query.loan_id)
