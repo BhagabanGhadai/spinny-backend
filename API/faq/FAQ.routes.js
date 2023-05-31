@@ -1,26 +1,22 @@
 const router = require('express').Router()
-const { CREATE_FAQ, GET_FAQ, GET_GENERAL_FAQ, GET_FAQ_PAGEWISE,GET_FAQ_SERVICE_TYPE,UPDATE_FAQ, DELETE_FAQ } = require('./controllers/FAQ.controller')
+const { CREATE_FAQ, GET_FAQ,GET_FAQ_LIST,UPDATE_FAQ, DELETE_FAQ } = require('./controllers/FAQ.controller')
 const { IS_ADMIN, IS_AUTHENTICATED } = require('../../services/auth.mw')
 
-router.post('/admin/add',
+router.post('/admin/',
     IS_ADMIN,
     IS_AUTHENTICATED,
     CREATE_FAQ)
-router.get('/public/get',
+router.get('/public/',
     GET_FAQ)
-router.get('/public/faq-general',
-    GET_GENERAL_FAQ)
-router.get('/public/service',
-    GET_FAQ_SERVICE_TYPE)
-router.get('/public/faq-list-pagewise',
-    GET_FAQ_PAGEWISE)
-router.patch('/admin/update',
+router.get('/public/list',
+    GET_FAQ_LIST)
+router.patch('/admin/',
     IS_ADMIN,
     IS_AUTHENTICATED,
     UPDATE_FAQ)
-router.delete('/admin/delete',
+router.delete('/admin/',
     IS_ADMIN,
     IS_AUTHENTICATED,
     DELETE_FAQ)
 
-module.exports.Admin_FAQ_Router = router
+module.exports.FAQ_Router = router

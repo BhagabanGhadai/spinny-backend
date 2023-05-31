@@ -1,4 +1,6 @@
+const { json } = require('body-parser')
 const Joi = require('joi')
+
 class UserValidations{
     signup_validations(){
         return Joi.object({ 
@@ -72,4 +74,25 @@ class LoanValidations{
     }
 }
 
-module.exports={UserValidations,LoanValidations}
+class FaqValidations{
+    faq_validation(){
+        return Joi.object({
+            question:Joi.string().required(),
+            answer:Joi.string().required(),
+            type:Joi.string().valid('buying','selling','general').required()
+        })
+    }
+    faq_id_validation(){
+        return Joi.object({
+            faq_id:Joi.string().alphanum().required()
+        })
+    }
+    update_faq_validation(){
+        return Joi.object({
+            question:Joi.string(),
+            answer:Joi.string(),
+            type:Joi.string().valid('buying','selling','general')
+        })
+    }
+}
+module.exports={UserValidations,LoanValidations,FaqValidations}

@@ -1,11 +1,6 @@
 const mongoose = require('mongoose');
-const { iraitech_db } = require('../../../services/db.connection');
 
 const Schema = new mongoose.Schema({
-    'page_id': {
-        type: mongoose.Schema.Types.ObjectId,
-        ref:'web-page'
-    },
     'question': {
         type: String,
         required: true
@@ -18,7 +13,7 @@ const Schema = new mongoose.Schema({
         type:String,
         validate:{
             validator:(v)=>{
-                  if(!(v=="General"||v=="Service")){
+                  if(!(v=="buying"||v=="selling"||v=="general")){
                     return false
                   }
                   return true
@@ -30,4 +25,4 @@ const Schema = new mongoose.Schema({
   
 });
 
-module.exports.FAQ= iraitech_db.model('faq',Schema,'faq');
+module.exports= mongoose.model('faq',Schema,'faq');
