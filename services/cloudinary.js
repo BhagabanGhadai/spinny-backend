@@ -23,7 +23,7 @@ const uploadToCloudinary = async (stream) => {
 };
 
 exports.UPLOAD_IMAGE = (path) => {
-    const stream = fs.createReadStream(path);
+    const stream = fs.createReadStream(path.path);
     uploadToCloudinary(stream)
         .then((result) => {
             console.log('Image uploaded successfully');
@@ -32,4 +32,19 @@ exports.UPLOAD_IMAGE = (path) => {
         .catch((error) => {
             console.error('Error uploading image:', error);
         });
+}
+
+exports.UPLOAD_MULTIPLE_IMAGE=async ()=>{
+    const uploadPromises = imagePaths.map((imagePath) => {
+        const stream = fs.createReadStream(imagePath.path);
+        return uploadToCloudinary(stream);
+      });
+    
+      try {
+        const results = await Promise.all(uploadPromises);
+        console.log('Images uploaded successfully');
+        return results
+      } catch (error) {
+        console.error('Error uploading images:', error);
+      }
 }

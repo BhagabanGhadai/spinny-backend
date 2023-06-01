@@ -95,4 +95,22 @@ class FaqValidations{
         })
     }
 }
-module.exports={UserValidations,LoanValidations,FaqValidations}
+
+class ReviewValidations{
+    review_data_validations(){
+        return Joi.object({
+
+        })
+    }
+    review_id_validations(){
+        return Joi.object({
+
+        })
+    }
+    update_review_validations(){
+        return Joi.object({
+
+        })
+    }
+}
+module.exports={UserValidations,LoanValidations,FaqValidations,ReviewValidations}
